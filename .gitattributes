@@ -1,0 +1,2 @@
+# Preserve the approved generated site byte-for-byte across Git clients.
+cct-website/site/** -text

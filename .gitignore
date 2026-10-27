@@ -1,0 +1,45 @@
+# Local evidence and client source archives stay outside the website repository.
+/backups/
+/client-assets/
+/crawl-exports/
+/review/
+/spec-bundle/
+/source-content-archive/*
+!/source-content-archive/homepage-update-assets-2026-10/
+/source-content-archive/homepage-update-assets-2026-10/*
+!/source-content-archive/homepage-update-assets-2026-10/google_reviews_9.json
+
+# Local QA outputs and scripts tied to this workstation's other projects.
+/cct-website/lighthouse/
+/cct-website/review-home-desktop.png
+/cct-website/axe-summary.json
+/cct-website/browser-check.json
+/cct-website/internal-link-check.json
+/cct-website/source-copy-check.json
+/cct-website/QA-REPORT.md
+/axe-check.cjs
+/browser-check.cjs
+/source-copy-check.cjs
+/make-migration-inventory.ps1
+/outbound-external-redirects.csv
+/FACTORY-DRY-RUN.md
+/MELISSA-REVIEW.md
+/PHOTO-PLACEMENT-PROPOSAL.md
+/debug.log
+
+# Secrets, local dependencies, and operating-system files.
+node_modules/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.zip
+.aws/
+.codex/
+.agents/
+.DS_Store
+Thumbs.db
+*.log
