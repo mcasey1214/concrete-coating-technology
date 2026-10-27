@@ -11,6 +11,7 @@
 
 # Local QA outputs and scripts tied to this workstation's other projects.
 /cct-website/lighthouse/
+/cct-website/site-preview/
 /cct-website/review-home-desktop.png
 /cct-website/axe-summary.json
 /cct-website/browser-check.json

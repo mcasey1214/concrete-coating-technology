@@ -2,7 +2,9 @@
   publish = "site"
 
 [context.deploy-preview]
-  command = "node netlify/preview-noindex.js site"
+  command = "node netlify/preview-noindex.js site site-preview"
+  publish = "site-preview"
 
 [context.branch-deploy]
-  command = "node netlify/preview-noindex.js site"
+  command = "node netlify/preview-noindex.js site site-preview"
+  publish = "site-preview"

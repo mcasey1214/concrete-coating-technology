@@ -20,3 +20,9 @@ Open `http://localhost:4173/`. The preview server listens on `0.0.0.0` for local
 - **Legacy URLs:** `cct-website/site/_redirects` contains proposed 301 rules. See `MIGRATION-INVENTORY.md` for migration decisions that remain open before replacing the LinkNow site.
 
 Raw WordPress exports, crawl data, client source media, local backups, review screenshots, and private client review notes are retained outside Git. The optimized media needed by the website is committed. `CONTENT-PARITY.md`, `CONTENT-REWRITE-MAP.md`, `PHOTO-AUDIT.md`, and `PHOTO-USE-MAP.md` document provenance and content decisions; their referenced raw evidence is stored separately in the local project archive.
+
+## Preview branch and future Netlify connection
+
+`main` holds the approved website. Work on `preview` and review changes there before deliberately merging them into `main`. No Netlify project or production domain is connected yet.
+
+When Melissa is ready to connect her Netlify account, select this private GitHub repository, set `main` as the production branch, set base directory `cct-website`, and confirm publish directory `site` with no production build command. Enable branch deploys for `preview`. The branch-deploy and pull-request contexts run `node netlify/preview-noindex.js site site-preview`; this copies the committed site into an ignored `site-preview/` directory, adds preview-only robots and X-Robots-Tag protection there, and publishes that copy. The command does not regenerate pages or modify `site/`. Netlify/GitHub authorization may need to be granted again under Melissa's account after the repository transfer. Keep the production domain disconnected until launch is separately approved. Noindex prevents search indexing; it does not restrict who can open a preview URL, so use Netlify deploy protection if private viewing is required.
