@@ -1,6 +1,6 @@
 # CCT typefaces
 
-The logo's stencil lettering informs two restrained accent typefaces. The homepage uses **Black Ops One** for short industrial labels. Other pages retain **Saira Stencil One** for short labels and service indices. Editorial serif headlines and readable sans-serif body copy remain in place.
+The logo's stencil lettering informs the site's display typography. The homepage and primary brand headings use **Black Ops One**. The self-hosted **Saira Stencil One** remains available as a secondary stencil accent where existing page styles call for it. Readable sans-serif body copy remains in place.
 
 ## Black Ops One
 
@@ -17,3 +17,8 @@ The logo's stencil lettering informs two restrained accent typefaces. The homepa
 - Font project and license: [Google Fonts family record](https://github.com/google/fonts/tree/main/ofl/sairastencilone) and [upstream Saira Stencil project](https://github.com/Omnibus-Type/Saira/tree/master/SairaStencilOne)
 
 The font's OFL license text is bundled next to the font as `cct-website/site/fonts/OFL.txt`. The accent font is not used for paragraphs or long headings. System sans-serif fallbacks remain in the CSS.
+
+## CTA and interface typography
+
+- The unified interface and CTA system uses the locally available system stack `Arial, Helvetica, sans-serif`. No external font request is made.
+- Lexend was previously considered for CTAs, but no Lexend font file is present locally; it is not used by the current button CSS. Its upstream Google Fonts project is distributed under SIL Open Font License 1.1: [project](https://github.com/googlefonts/lexend), [license](https://github.com/googlefonts/lexend/blob/main/OFL.txt).

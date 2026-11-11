@@ -31,3 +31,14 @@ Updated 2026-10-27. This map records visible project photography in the current 
 ## Replacing one of the six split hero photos
 
 Keep the original in the source archive. Add an optimized display copy under `cct-website/site/images/projects/` and a high-quality viewing copy under `cct-website/site/images/projects/full/`. Update the route's `src`, `full`, `alt`, dimensions, optional `srcset`, and crop position in [`cct-split-hero.cjs`](cct-split-hero.cjs). Set `replacementNeeded` to `false` after the new assignment is confirmed. Run `node rebuild-hero-pages.cjs` from the project root to update only the six affected page bodies, then check the resulting image crop at mobile and desktop widths. The regular site generator also imports this same hero configuration.
+
+## Photo update — 2026-11-08
+
+The two supplied photo sets are preserved unchanged as review-copy files under `source-media/received-review-copies/`; their supplied README files say these are resized copies, not original full-resolution photos, and that source names are not permission to publish client identities. Responsive WebP derivatives live in `cct-website/site/images/projects/client-work/`.
+
+- Home hero keeps the existing surface-preparation video, then uses the finished garage, finished patio, and large interior floor photos. The basement comparison remains the existing confirmed same-project pair.
+- Gallery now contains finished basement stages, two finished garage views, a finished patio, a separate decorative patio, and a large interior flake floor. Captions stay generic and do not claim client names or mix before/after candidates.
+- Services overview and protective/decorative/overlay pages use relevant supplied garage, patio, and interior photos. The commercial kitchen and garage application photos are labeled as in progress; neither appears as a completed gallery project.
+- Excluded from use: the unverified garage-before and kitchen-before candidates, patio images showing a pool/hot tub, and source-labeled client-named images where photo identity or public naming permission is not established. The cluttered garage candidate was not selected.
+- Remaining legacy image needing a better verified replacement: `concrete-overlay-application.webp` on `/services/concrete-overlay/` is an archive application illustration whose worker/project attribution is unverified. No suitable matching client overlay-application photo was supplied. No verified finished commercial-floor photo was supplied; the kitchen photo is explicitly in progress.
+- The other 13 routes do not display project stock photography. They use site branding, page text, and (on About) Melissa's existing portrait.

@@ -1,4 +1,28 @@
-/contact-us  /contact-us/  301
-/blog/       /about-us/blog/  301
-/concrete-overlay/  /services/concrete-overlay/  301
-/home/       /  301
+# Netlify redirects for concretecoatingtechnology.com (also copied into preview builds).
+# Every legacy URL points straight at its final destination: no redirect chains.
+# Retired service URLs are forced (301!) so a static file at the old path can never shadow the rule.
+# Both slash forms are listed so the rule applies however the old URL was linked.
+
+# Legacy aliases carried over from the previous site.
+# No /contact-us -> /contact-us/ rule: Netlify ignores trailing slashes when matching rules,
+# so that rule matched its own target and returned 403 for the Contact page (verified with netlify dev).
+# Netlify's built-in pretty-URL handling already serves /contact-us/ for /contact-us.
+/home/                                    /             301
+
+# Service pages consolidated into Concrete Floor Coatings on /services/ (November 2026)
+/services/concrete-repair-maintenance/    /services/    301!
+/services/concrete-repair-maintenance     /services/    301!
+/services/protective-concrete-overlays/   /services/    301!
+/services/protective-concrete-overlays    /services/    301!
+/services/decorative-concrete-overlays/   /services/    301!
+/services/decorative-concrete-overlays    /services/    301!
+/services/concrete-overlay/               /services/    301!
+/services/concrete-overlay                /services/    301!
+/concrete-overlay/                        /services/    301!
+/concrete-overlay                         /services/    301!
+
+# Old epoxy blog category: epoxy floor coatings are the consolidated service
+/category/epoxy-flooring/                 /services/    301!
+/category/epoxy-flooring                  /services/    301!
+
+# Intentionally no rule: /blog/, /about-us/blog/ and /welcome-to-our-blog/ (placeholder blog, retired) return 404.

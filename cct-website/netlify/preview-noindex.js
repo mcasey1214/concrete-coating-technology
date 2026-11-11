@@ -32,7 +32,7 @@ if (!sourceHeaders.startsWith('/*\n') || /^\s*X-Robots-Tag:/im.test(sourceHeader
 }
 
 fs.cpSync(source, output, { recursive: true });
-fs.writeFileSync(path.join(output, 'robots.txt'), '# Preview deploy: not for search engines\nUser-agent: *\nDisallow: /\n');
+fs.writeFileSync(path.join(output, 'robots.txt'), '# Preview deploy: crawlers must be able to read the noindex response header.\nUser-agent: *\nAllow: /\n');
 fs.writeFileSync(path.join(output, '_headers'), sourceHeaders.replace('/*\n', '/*\n  X-Robots-Tag: noindex\n'));
 
 console.log('preview-noindex: isolated site-preview output created with noindex protection');

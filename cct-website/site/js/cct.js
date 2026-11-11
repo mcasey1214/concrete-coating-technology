@@ -2,6 +2,13 @@
 
 (() => {
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let keyboardModality = false;
+  document.addEventListener('keydown', event => {
+    if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) keyboardModality = true;
+  }, true);
+  const notePointerInput = () => { keyboardModality = false; };
+  document.addEventListener('pointerdown', notePointerInput, true);
+  document.addEventListener('touchstart', notePointerInput, { capture: true, passive: true });
   const announcement = document.querySelector('.announce');
   if (announcement) {
     const track = document.createElement('div');
@@ -18,7 +25,6 @@
     let resizeFrame = null;
     let groupWidth = 0;
     let durationMs = 0;
-    let focusDistance = 0;
     const fillTrack = () => {
       track.querySelectorAll('.announce-group[aria-hidden="true"]').forEach(copy => copy.remove());
       groupWidth = group.getBoundingClientRect().width;
@@ -35,25 +41,42 @@
       announcement.style.setProperty('--marquee-duration', `${(durationMs / 1000).toFixed(2)}s`);
     };
     fillTrack();
-    const phoneLink = group.querySelector('a[href^="tel:"]');
-    phoneLink?.addEventListener('focus', () => {
-      const barRect = announcement.getBoundingClientRect();
-      const linkRect = phoneLink.getBoundingClientRect();
-      const groupRect = group.getBoundingClientRect();
-      const relativeLeft = linkRect.left - groupRect.left;
-      if (motionQuery.matches) {
-        announcement.scrollLeft = Math.max(0, relativeLeft - (barRect.width - linkRect.width) / 2);
-      } else if (linkRect.left < barRect.left + 8 || linkRect.right > barRect.right - 8) {
-        focusDistance = Math.min(0, Math.max(12, (barRect.width - linkRect.width) / 2) - relativeLeft);
-        announcement.style.setProperty('--marquee-focus-distance', `${focusDistance}px`);
-        announcement.classList.add('announce-focus-reveal');
-      }
+    const announcementLinks = [...group.querySelectorAll('a')];
+    announcementLinks.forEach(link => {
+      link.addEventListener('focus', () => {
+        const barRect = announcement.getBoundingClientRect();
+        const linkRect = link.getBoundingClientRect();
+        const groupRect = group.getBoundingClientRect();
+        const relativeLeft = linkRect.left - groupRect.left;
+        if (motionQuery.matches) {
+          announcement.scrollLeft = Math.max(0, relativeLeft - (barRect.width - linkRect.width) / 2);
+          return;
+        }
+        const animation = track.getAnimations()[0];
+        if (!animation || !groupWidth) return;
+        animation.pause();
+        const centeredLeft = Math.max(0, relativeLeft - (barRect.width - linkRect.width) / 2);
+        animation.currentTime = centeredLeft / groupWidth * durationMs;
+        window.requestAnimationFrame(() => {
+          if (document.activeElement === link) announcement.scrollLeft = 0;
+        });
+      });
+      link.addEventListener('blur', () => {
+        if (motionQuery.matches || touchPauseTimer !== null || announcement.matches(':hover')) return;
+        track.getAnimations()[0]?.play();
+      });
     });
-    phoneLink?.addEventListener('blur', () => {
-      if (!announcement.classList.contains('announce-focus-reveal')) return;
-      announcement.classList.remove('announce-focus-reveal');
-      const animation = track.getAnimations()[0];
-      if (animation && groupWidth) animation.currentTime = -focusDistance / groupWidth * durationMs;
+    let touchPauseTimer = null;
+    announcement.addEventListener('pointerdown', event => {
+      if (event.pointerType !== 'touch') return;
+      track.getAnimations()[0]?.pause();
+      window.clearTimeout(touchPauseTimer);
+      touchPauseTimer = window.setTimeout(() => {
+        touchPauseTimer = null;
+        if (!announcement.matches(':hover') && !announcement.contains(document.activeElement)) {
+          track.getAnimations()[0]?.play();
+        }
+      }, 5000);
     });
     window.addEventListener('resize', () => {
       if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
@@ -240,7 +263,7 @@
     const stillMs = 2500;
     const videoMs = 7200;
     let current = Math.max(0, slides.findIndex(slide => slide.getAttribute('aria-hidden') !== 'true'));
-    let userPaused = motionQuery.matches;
+    let userPaused = false;
     let timer = null;
     let fadeTimer = null;
     let deadline = 0;
@@ -249,6 +272,10 @@
     const activeVideo = () => slides[current]?.querySelector('video');
     const loadImage = image => {
       if (!image?.dataset.src) return;
+      if (image.dataset.srcset) {
+        image.srcset = image.dataset.srcset;
+        image.removeAttribute('data-srcset');
+      }
       image.src = image.dataset.src;
       image.removeAttribute('data-src');
       image.loading = 'eager';
@@ -340,19 +367,6 @@
     show(current);
   }
 
-  const comparison = document.querySelector('[data-project-comparison]');
-  const comparisonRange = comparison?.querySelector('.comparison-range');
-  if (comparison && comparisonRange) {
-    const updateComparison = () => {
-      const value = Math.max(0, Math.min(100, Number(comparisonRange.value)));
-      comparison.style.setProperty('--split', `${value}%`);
-      comparisonRange.setAttribute('aria-valuetext', `Finished floor shown from the divider to the right: ${value}%`);
-    };
-    comparisonRange.addEventListener('input', updateComparison);
-    comparisonRange.addEventListener('change', updateComparison);
-    updateComparison();
-  }
-
   const reviews = document.querySelector('[data-review-carousel]');
   if (reviews) {
     const slides = [...reviews.querySelectorAll('[data-review-slide]')];
@@ -362,13 +376,13 @@
     const toggle = reviews.querySelector('[data-review-toggle]');
     const status = reviews.querySelector('[data-review-status]');
     let current = 0;
-    let userPaused = motionQuery.matches;
-    let hoverPaused = false;
+    let userPaused = false;
+    let motionPaused = motionQuery.matches;
     let focusPaused = false;
     let timer = null;
     let touchStart = null;
 
-    const isPaused = () => userPaused || hoverPaused || focusPaused || document.hidden || motionQuery.matches;
+    const isPaused = () => userPaused || motionPaused || focusPaused || document.hidden;
     const update = (index, announce = false) => {
       current = (index + slides.length) % slides.length;
       slides.forEach((slide, position) => {
@@ -389,10 +403,12 @@
     const schedule = () => {
       stop();
       if (toggle) {
-        toggle.hidden = motionQuery.matches;
-        toggle.textContent = userPaused ? 'Resume reviews' : 'Pause reviews';
-        toggle.setAttribute('aria-pressed', String(userPaused));
-        toggle.setAttribute('aria-label', userPaused ? 'Resume automatic review rotation' : 'Pause automatic review rotation');
+        const pausedByPreference = motionPaused;
+        const explicitlyPaused = userPaused || pausedByPreference;
+        toggle.hidden = false;
+        toggle.textContent = explicitlyPaused ? 'Resume reviews' : 'Pause reviews';
+        toggle.setAttribute('aria-pressed', String(explicitlyPaused));
+        toggle.setAttribute('aria-label', explicitlyPaused ? 'Resume automatic review rotation' : 'Pause automatic review rotation');
       }
       reviews.dataset.reviewPaused = String(isPaused());
       if (isPaused() || slides.length < 2) return;
@@ -410,29 +426,32 @@
     previous?.addEventListener('click', () => interact(current - 1));
     next?.addEventListener('click', () => interact(current + 1));
     toggle?.addEventListener('click', () => {
-      userPaused = !userPaused;
-      schedule();
-    });
-    reviews.addEventListener('pointerenter', () => {
-      hoverPaused = true;
-      schedule();
-    });
-    reviews.addEventListener('pointerleave', () => {
-      hoverPaused = false;
+      if (userPaused || motionPaused) {
+        userPaused = false;
+        motionPaused = false;
+      } else {
+        userPaused = true;
+      }
       schedule();
     });
     reviews.addEventListener('focusin', () => {
-      focusPaused = true;
+      focusPaused = keyboardModality;
       schedule();
     });
     reviews.addEventListener('focusout', () => setTimeout(() => {
       focusPaused = reviews.contains(document.activeElement);
       schedule();
     }, 0));
-    reviews.addEventListener('pointerdown', event => {
-      if (event.target !== toggle) userPaused = true;
-      schedule();
-    });
+    const resumeAfterPointerFocus = () => {
+      keyboardModality = false;
+      if (focusPaused) {
+        focusPaused = false;
+        schedule();
+      }
+    };
+    reviews.addEventListener('pointerdown', resumeAfterPointerFocus);
+    reviews.addEventListener('pointermove', resumeAfterPointerFocus, { passive: true });
+    reviews.addEventListener('touchstart', resumeAfterPointerFocus, { passive: true });
     stage?.addEventListener('touchstart', event => {
       touchStart = event.changedTouches[0]?.clientX ?? null;
     }, { passive: true });
@@ -453,12 +472,36 @@
     });
     document.addEventListener('visibilitychange', schedule);
     motionQuery.addEventListener?.('change', event => {
-      if (event.matches) userPaused = true;
+      motionPaused = event.matches;
       schedule();
     });
     update(0);
     schedule();
   }
+
+  const comparison = document.querySelector('[data-project-comparison]');
+  const comparisonRange = comparison?.querySelector('.comparison-range');
+  if (comparison && comparisonRange) {
+    const updateComparison = () => {
+      const value = Math.max(0, Math.min(100, Number(comparisonRange.value)));
+      comparison.style.setProperty('--split', `${value}%`);
+      comparisonRange.setAttribute('aria-valuetext', `Finished floor shown from the divider to the right: ${value}%`);
+    };
+    comparisonRange.addEventListener('input', updateComparison);
+    comparisonRange.addEventListener('change', updateComparison);
+    updateComparison();
+  }
+
+  const reviewToggle = document.querySelector('[data-spotlight-review-toggle]');
+  const fullReview = document.querySelector('[data-spotlight-full-review]');
+  const collapsedQuote = document.querySelector('[data-spotlight-collapsed-quote]');
+  reviewToggle?.addEventListener('click', () => {
+    const expanded = reviewToggle.getAttribute('aria-expanded') !== 'true';
+    reviewToggle.setAttribute('aria-expanded', String(expanded));
+    reviewToggle.textContent = expanded ? 'Show Less' : 'Read Ronald\'s Full Review';
+    if (fullReview) fullReview.hidden = !expanded;
+    if (collapsedQuote) collapsedQuote.hidden = expanded;
+  });
 
   const revealItems = document.querySelectorAll('.reveal');
   if (motionQuery.matches || !('IntersectionObserver' in window)) {
@@ -475,4 +518,105 @@
 
   const year = document.getElementById('year');
   if (year) year.textContent = new Date().getFullYear();
+
+  const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+  const inquiryForms = document.querySelectorAll('[data-cct-inquiry]');
+  inquiryForms.forEach(inquiryForm => {
+    const formStatus = inquiryForm.querySelector('[data-form-status]');
+    inquiryForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (isLocalPreview) {
+        if (formStatus) formStatus.textContent = 'Local preview only. This form is not connected to email yet. Please call or email CCT instead.';
+        return;
+      }
+      const submitButton = inquiryForm.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.disabled = true;
+      if (formStatus) formStatus.textContent = 'Sending your inquiry...';
+      try {
+        const response = await fetch(inquiryForm.action || '/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(new FormData(inquiryForm)).toString()
+        });
+        if (!response.ok) throw new Error('Form submission failed');
+        inquiryForm.reset();
+        if (formStatus) formStatus.textContent = 'Your inquiry was submitted. Email notification depends on the site configuration; Melissa will follow up soon.';
+      } catch {
+        if (formStatus) formStatus.textContent = 'We could not send your inquiry. Please call (401) 677-1000 or email melissa@concretecoatingtechnology.com.';
+      } finally {
+        if (submitButton) submitButton.disabled = false;
+      }
+    });
+  });
+
+  const inquiryDialog = document.querySelector('[data-inquiry-dialog]');
+  if (inquiryDialog) {
+    const closeButtons = inquiryDialog.querySelectorAll('[data-close-inquiry]');
+    let inquiryOpener = null;
+    let inertState = [];
+    const openInquiry = opener => {
+      inquiryOpener = opener;
+      inquiryDialog.hidden = false;
+      document.body.classList.add('inquiry-dialog-open');
+      inertState = [...document.body.children]
+        .filter(element => element !== inquiryDialog)
+        .map(element => ({ element, inert: element.inert, ariaHidden: element.getAttribute('aria-hidden') }));
+      inertState.forEach(({ element }) => {
+        element.inert = true;
+        element.setAttribute('aria-hidden', 'true');
+      });
+      inquiryDialog.querySelector('[name="name"]')?.focus();
+    };
+    const closeInquiry = () => {
+      if (inquiryDialog.hidden) return;
+      inquiryDialog.hidden = true;
+      document.body.classList.remove('inquiry-dialog-open');
+      inertState.forEach(({ element, inert, ariaHidden }) => {
+        element.inert = inert;
+        if (ariaHidden === null) element.removeAttribute('aria-hidden');
+        else element.setAttribute('aria-hidden', ariaHidden);
+      });
+      inquiryOpener?.focus();
+      inquiryOpener = null;
+    };
+    document.addEventListener('click', event => {
+      const link = event.target.closest('a[href]');
+      if (!link) return;
+      const destination = new URL(link.href, window.location.href);
+      const inquiryIntent = destination.pathname.replace(/\/$/, '') === '/contact-us'
+        && (destination.hash === '#inquiry-form'
+          || link.classList.contains('nav-cta')
+          || link.classList.contains('button')
+          || /request|estimate|contact melissa|talk with melissa|project inquiry/i.test(link.innerText));
+      if (!inquiryIntent) return;
+      event.preventDefault();
+      openInquiry(link);
+    });
+    closeButtons.forEach(button => button.addEventListener('click', closeInquiry));
+    inquiryDialog.addEventListener('click', event => {
+      if (event.target === inquiryDialog) closeInquiry();
+    });
+    document.addEventListener('keydown', event => {
+      if (inquiryDialog.hidden) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeInquiry();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = [...inquiryDialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+        .filter(element => !element.closest('[aria-hidden="true"]'));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+  }
 })();

@@ -44,3 +44,9 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# Private client source media, private client notes, and temporary local servers (never commit).
+/source-media/
+/cct-website/serve-phone.cjs
+/RONALD-TRUDEL-SOURCE-NOTE.md
+/MELISSA-LOCAL-PENDING.md
